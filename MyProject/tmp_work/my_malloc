@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#define MEMORY_SIZE 1000
+
+struct mem_block {
+    int size;
+    struct mem_block *next;
+};
+
+static struct mem_block *AVAIL, *end_mem;
+
+void *my_malloc(size_t size) {
+    // Увеличиваем размер с учетом блоков с информацией
+    size += 2 * sizeof(struct mem_block);
+    struct mem_block **Q = &end_mem, *pointer = (*Q)->next;
+    // Иду по свободным ячейкам, пока не дойду до конца
+    while (pointer != end_mem) {
+        // Если ячейка больше либо равна нужному размеру, то берем ее
+        if (-pointer->size >= size) {
+            struct mem_block *L;
+            size_t K = -(pointer->size) - size;
+            // Реализация шага А4'
+            if (K <= 10) {
+                printf("TEST1\n");
+                // 1)Если размер ячейки чуть больше нужного
+                L = pointer;
+                // Помечаем ячейку как занятую
+                (L - pointer->size - sizeof(struct mem_block))->size = pointer->size; // Сохранаю информацию о размере
+                (*Q)->next = pointer->next;
+            }
+            else {
+                printf("TEST2\n");
+                // 2)Если размер ячейки больше нужного нам размера
+                pointer->size = -K;
+                L = pointer + K;
+                L->size = size;
+                // Помечаем ячейку как занятую
+                (L + size - sizeof(struct mem_block))->size = size; // Сохранаю информацию о размере
+            }
+            return L + sizeof(struct mem_block);
+        }
+        // Если размер ячейки не подошел
+        Q = &pointer;
+        pointer = pointer->next;
+    }
+    return NULL;
+}
+
+void my_free(void* ptr) {
+    
+}
+
+int main (void) {
+    int *a, *b, *c;
+    AVAIL = (struct mem_block*)calloc(MEMORY_SIZE, 1);
+    end_mem = (struct mem_block*)calloc(MEMORY_SIZE, 1);
+
+    struct mem_block *memory[3];
+    for (int i = 0; i < 2; i++) {
+        memory[i] = calloc(MEMORY_SIZE, 1);
+        memory[i]->size = -MEMORY_SIZE;
+        if (i > 0) {
+            memory[i - 1]->next = memory[i];
+        }
+    }
+    memory[2]->next = end_mem;
+    if (AVAIL == NULL)
+        return 0;
+    AVAIL->next = memory[0];
+    AVAIL->size = -MEMORY_SIZE;
+    end_mem->next = AVAIL;
+    printf("1) %p, %p\n", AVAIL, end_mem->next);
+    a = my_malloc(1000 - 2 * sizeof(struct mem_block));
+    printf("2) %p, %p\n", memory[0], end_mem->next);
+    b = my_malloc(1000 - 2 * sizeof(struct mem_block));
+    printf("3) %p, %p\n", memory[1], end_mem->next);
+    c = my_malloc(100 - 2 * sizeof(struct mem_block));
+
+    printf("%p %p %p %p",AVAIL, a, b, c);
+
+    return 0;
+}

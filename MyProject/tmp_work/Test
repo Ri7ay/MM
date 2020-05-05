@@ -1,0 +1,88 @@
+#include "memalloc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#define  MEMORY_SIZE 1000
+
+int *AVAIL, *end_mem;
+
+void *my_malloc(size_t size) {
+    // Увеличиваем размер с учетом блоков с информацией
+    size += 8;
+    int **Q = &end_mem, *pointer = *((int**)(*Q) + 4);
+    // Иду по свободным ячейкам, пока не дойду до конца
+    while (pointer != end_mem) {
+        int pointer_size = -(*pointer);
+        // Если ячейка больше либо равна нужному размеру, то берем ее
+        if (pointer_size >= size) {
+            int *L;
+            size_t K = -(*pointer) - size;
+            // Реализация шага А4'
+            if (K <= 10) {
+                printf("TEST1\n");
+                // 1)Если размер ячейки чуть больше нужного
+                L = pointer;
+                // Помечаем ячейку как занятую
+                *L = pointer_size; // Сохранаю информацию о размере в начало
+                *(L + pointer_size - 4) = pointer_size; // Сохранаю информацию о размере в конец
+                *((int**)(*Q) + 4) = *((int**)pointer + 4);
+            }
+            else {
+                printf("TEST2\n");
+                // 2)Если размер ячейки больше нужного нам размера
+                *pointer = -K;
+                *((pointer + K - 4)) = -K;
+                //printf("%p\n", pointer);
+                L = pointer + K;
+                // Помечаем ячейку как занятую
+                *L = size; // Сохранаю информацию о размере в начало
+                *(L + size - 4) = size; // Сохранаю информацию о размере в конец
+            }
+            return L + 4;
+        }
+        // Если размер ячейки не подошел
+        Q = &pointer;
+        pointer = *((int**)pointer + 4);
+    }
+    printf("TEST3\n");
+    return NULL;
+}
+
+
+int main (void) {
+    int *a, *b, *c;
+
+    AVAIL = calloc(MEMORY_SIZE, 1);
+    end_mem = calloc(MEMORY_SIZE, 1);
+
+    *AVAIL = -MEMORY_SIZE;
+    *((int**)AVAIL + 4) = end_mem;
+    *((int**)AVAIL + 12) = end_mem;
+
+    *end_mem = -MEMORY_SIZE;
+    *((int**)end_mem + 4) = AVAIL;
+    *((int**)end_mem + 12) = AVAIL;
+
+    printf("%p / %p\n", AVAIL, *((int**)end_mem + 4));
+
+    a = my_malloc(492);
+    b = my_malloc(100);
+    c = my_malloc(100);
+
+    if (a != NULL) {
+        printf("a: %p / %d / %d\n", a, *(a - 4), *(a + *(a - 4) - 8));
+    } else {
+        printf("a: %p\n", a);
+    }
+    if (b != NULL) {
+        printf("b: %p / %d / %d\n", b, *(b - 4), *(b + *(b - 4) - 8));
+    } else {
+        printf("b: %p\n", b);
+    }
+    if (c != NULL) {
+        printf("c: %p / %d / %d\n", c, *(c - 4), *(c + *(c - 4) - 8));
+    } else {
+        printf("c: %p\n", c);
+    }
+    
+    return 0;
+}

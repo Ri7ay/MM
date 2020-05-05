@@ -1,0 +1,254 @@
+#include "memalloc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#define  MEMORY_SIZE 1000
+
+int *AVAIL, *mas[3], *end_mem;
+
+void print_AVAIL() {
+    // Указатель на первую свободную ячейку
+    int *pointer = *((int**)end_mem + 4);
+    // Вывожу свободные ячейки
+    for (int index = 1; pointer != end_mem  && index < 5; index++, pointer = *((int**)pointer + 4)) {
+        // Порядок ячейки, указатель на нее и размер
+        printf("%i: %p / %d / %d\n", index,  pointer, *pointer, *(pointer - *pointer - 4));
+    }
+}
+
+void *my_malloc(size_t size) {
+    // Увеличиваем размер с учетом блоков с информацией
+    size += 8;
+    int *tmp_AVAIL = *((int**)end_mem + 4);
+    int **Q = &(*((int**)tmp_AVAIL + 12)), *pointer = *((int**)(*Q) + 4);
+    // Иду по свободным ячейкам, пока не дойду до конца
+    while (pointer != end_mem) {
+        //printf("%p\n", AVAIL);
+        int pointer_size = -(*pointer);
+        // Если ячейка больше либо равна нужному размеру, то берем ее
+        if (pointer_size >= size) {
+            int *L;
+            size_t K = -(*pointer) - size;
+            // Реализация шага А4'
+            if (K <= 10) {
+                printf("TEST1\n");
+                // 1)Если размер ячейки чуть больше нужного
+                L = pointer;
+                // Помечаем ячейку как занятую
+                *L = pointer_size; // Сохранаю информацию о размере в начало
+                *(L + pointer_size - 4) = pointer_size; // Сохранаю информацию о размере в конец
+                int *pointer_first = *((int**)pointer + 4), *pointer_second = *((int**)pointer + 12);
+                *((int**)pointer_first + 12) = pointer_second;
+                *((int**)pointer_second + 4) = pointer_first;
+            }
+            else {
+                printf("TEST2\n");
+                // 2)Если размер ячейки больше нужного нам размера
+                *pointer = -K;
+                *((pointer + K - 4)) = -K;
+                L = pointer + K;
+                // Помечаем ячейку как занятую
+                *L = size; // Сохранаю информацию о размере в начало
+                *(L + size - 4) = size; // Сохранаю информацию о размере в конец
+            }
+            return L + 4;
+        }
+        // Если размер ячейки не подошел
+        Q = &pointer;
+        pointer = *((int**)pointer + 4);
+    }
+    printf("TEST3\n");
+    return NULL;
+}
+
+void my_free(void* ptr) {
+    // Перемащаю указатель на начало
+    int zero = 0,*pointer_zero = (int*)ptr - 4, *pointer_left = &zero, *pointer_right = &zero;
+    *pointer_zero = -*pointer_zero;
+    *(pointer_zero - *pointer_zero - 4) = *pointer_zero;
+    // Свободна ли левая ячейка
+    if (*(pointer_zero - 4) < 0) {
+        pointer_left = pointer_zero + *(pointer_zero - 4);
+
+    }
+    if (*(pointer_zero - *pointer_zero) < 0) {
+        pointer_right = pointer_zero - *pointer_zero;
+    }
+    if (*pointer_left < 0 && *pointer_right == 0) {
+        *(pointer_zero - *pointer_zero - 4) += *pointer_left;
+        *pointer_left = *(pointer_zero - *pointer_zero - 4);
+        return;
+    } else if (*pointer_left == 0 && *pointer_right < 0) {
+        int *before_right = *((int**)pointer_right + 12);
+        *(pointer_right - *pointer_right - 4) += *pointer_zero;
+        *pointer_zero = *(pointer_right - *pointer_right - 4);
+        *((int**)pointer_zero + 4) = *((int**)pointer_right + 4);
+        *((int**)pointer_zero + 12) = *((int**)pointer_right + 12);
+        *((int**)before_right + 4) = pointer_zero;
+        return;
+    } else if (*pointer_left < 0 && *pointer_right < 0) {
+        //printf("TEST: \n");
+        print_AVAIL();
+        int *pointer_first = *((int**)pointer_right + 4), *pointer_second = *((int**)pointer_right + 12);
+        //*before_right = *((int**)pointer_right + 12);
+        *((int**)pointer_first + 12) = pointer_second;
+        *((int**)pointer_second + 4) = pointer_first;
+        *pointer_zero += *pointer_right;
+        *(pointer_zero - *pointer_zero - 4) = *pointer_left + *pointer_zero;
+        *pointer_left = *(pointer_zero - *pointer_zero - 4);
+        //*((int**)before_right + 4) = pointer_left;
+        return;
+        //pointer = pointer - *pointer;
+    } else {
+        int *tmp_AVAIL = *((int**)end_mem + 4);
+        if (end_mem == *((int**)tmp_AVAIL + 4)) {
+            *((int**)end_mem + 4) = pointer_zero;
+            *((int**)tmp_AVAIL + 12) = pointer_zero;
+            *((int**)pointer_zero + 4) = tmp_AVAIL;
+            *((int**)pointer_zero + 12) = end_mem;
+            return;
+        } else {
+            //printf("TEST: \n");
+            *((int**) pointer_zero + 4) = tmp_AVAIL;
+            *((int**) pointer_zero + 12) = *((int**)tmp_AVAIL + 12);
+            int *before_AVAIL = *((int**) tmp_AVAIL + 12);
+            *((int**) tmp_AVAIL + 12) = pointer_zero;
+            *((int**)before_AVAIL + 4) = pointer_zero;
+            //printf("Test: %d\n", **((int**) AVAIL + 12));
+            //AVAIL = pointer_zero;
+            return;
+        }
+    }
+
+}
+/*
+int main (void) {
+    int *a, *b, *c;
+    AVAIL = calloc(MEMORY_SIZE, 1);
+    end_mem = calloc(MEMORY_SIZE, 1);
+
+    *AVAIL = -MEMORY_SIZE;
+    *(AVAIL + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+
+    *end_mem = -MEMORY_SIZE;
+    *(end_mem + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+
+    for (int i = 0; i < 3; i++) {
+        mas[i] = calloc(MEMORY_SIZE, 1);
+    }
+
+    *((int**)AVAIL + 4) = mas[0];
+    *((int**)AVAIL + 12) = end_mem;
+
+    *((int**)end_mem + 4) = AVAIL;
+    *((int**)end_mem + 12) = mas[0];
+
+    *mas[0] = -MEMORY_SIZE;
+    *(mas[0] + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+    *((int**)mas[0] + 4) = end_mem;
+    *((int**)mas[0] + 12) = AVAIL;
+
+
+    *mas[1] = -MEMORY_SIZE;
+    *(mas[1] + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+    *((int**)mas[1] + 4) = mas[2];
+    *((int**)mas[1] + 12) = mas[0];
+
+    *mas[2] = -MEMORY_SIZE;
+    *(mas[2] + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+    *((int**)mas[2] + 4) = AVAIL;
+    *((int**)mas[2] + 12) = mas[1];
+
+    printf("AVAIL: %p\n", AVAIL);
+    //print_AVAIL();
+    printf("\n");
+
+    a = my_malloc(192);
+    b = my_malloc(192);
+    c = my_malloc(192);
+
+    printf("\n");
+
+    if (a != NULL) {
+        printf("a: %p / %d / %d\n", a, *(a - 4), *(a + *(a - 4) - 8));
+    } else {
+        printf("a: %p\n", a);
+    }
+    if (b != NULL) {
+        printf("b: %p / %d / %d\n", b, *(b - 4), *(b + *(b - 4) - 8));
+    } else {
+        printf("b: %p\n", b);
+    }
+    if (c != NULL) {
+        printf("c: %p / %d / %d\n", c, *(c - 4), *(c + *(c - 4) - 8));
+    } else {
+        printf("c: %p\n", c);
+    }
+
+    printf("\n");
+
+    print_AVAIL();
+    my_free(b);
+    print_AVAIL();
+    my_free(a);
+    print_AVAIL();
+    my_free(c);
+    print_AVAIL();
+    return 0;
+}
+*/
+
+int main (void) {
+    int *a, *b, *c;
+
+    AVAIL = calloc(MEMORY_SIZE, 1);
+    end_mem = calloc(MEMORY_SIZE, 1);
+
+    *AVAIL = -MEMORY_SIZE;
+    *(AVAIL + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+    *((int**)AVAIL + 4) = end_mem;
+    *((int**)AVAIL + 12) = end_mem;
+
+    *end_mem = -MEMORY_SIZE;
+    *(end_mem + MEMORY_SIZE - 4) = -MEMORY_SIZE;
+    *((int**)end_mem + 4) = AVAIL;
+    *((int**)end_mem + 12) = AVAIL;
+
+
+    printf("AVAIL: %p\n", AVAIL);
+    print_AVAIL();
+    printf("\n");
+
+    a = my_malloc(692);
+    b = my_malloc(100);
+    c = my_malloc(100);
+
+    printf("\n");
+
+    if (a != NULL) {
+        printf("a: %p / %d / %d\n", a, *(a - 4), *(a + *(a - 4) - 8));
+    } else {
+        printf("a: %p\n", a);
+    }
+    if (b != NULL) {
+        printf("b: %p / %d / %d\n", b, *(b - 4), *(b + *(b - 4) - 8));
+    } else {
+        printf("b: %p\n", b);
+    }
+    if (c != NULL) {
+        printf("c: %p / %d / %d\n", c, *(c - 4), *(c + *(c - 4) - 8));
+    } else {
+        printf("c: %p\n", c);
+    }
+
+    printf("\n");
+
+    print_AVAIL();
+    my_free(c);
+    print_AVAIL();
+    my_free(b);
+    print_AVAIL();
+    my_free(a);
+    print_AVAIL();
+
+    return 0;
+}
