@@ -1,0 +1,59 @@
+// TemplateClasses.cpp : main project file.
+//istream_iterator<int> b(cin), e;
+//list<int> lst(b, e);
+
+#include "stdafx.h"
+#include <iostream>
+#include <stack>
+#include <string>
+#include <list>
+#include <fstream>
+#include <iterator>
+
+using namespace System;
+using namespace std;
+
+void print_div_even(list<int> lst)
+{
+	for (auto c: lst)
+		if (c % 2 == 0)
+			cout << c / 2 << " ";
+		else
+			cout << c << " ";
+}
+
+void print_units(list<int> lst)
+{
+	int quan = 0;
+	for (auto c : lst)
+		if (c == 1)
+			quan++;
+	cout << quan;
+}
+
+void print_txt(list<int> lst)
+{
+	ofstream fout_even("even.txt");
+	ofstream fout_odd("odd.txt");
+	for (auto c : lst)
+		if (c % 2 == 0)
+			fout_even << c  << " ";
+		else
+			fout_odd << c << " ";
+	fout_even.close();
+	fout_odd.close();
+}
+
+
+int main()
+{
+	string file;
+	cin >> file;
+	ifstream fin(file); 
+	istream_iterator<int> b(fin), e;
+	list<int> lst(b, e);
+	fin.close();
+
+	print_txt(lst);
+	return 0;
+}

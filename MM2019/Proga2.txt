@@ -1,0 +1,56 @@
+#include <iostream>
+#include "math.h"
+using namespace std;
+
+
+struct Multiplicity
+{
+    int k2, k3, k5;
+    Multiplicity( void );
+    void ConsiderNumber ( int number );
+};
+
+Multiplicity::Multiplicity( void ):
+k2(0), k3(0), k5(0) {}
+
+void Multiplicity::ConsiderNumber ( int number )
+{
+    if (number % 2 == 0)
+        k2++;
+    if (number % 3 == 0)
+        k3++;
+    if (number % 5 == 0)
+        k5++;
+}
+
+struct MultiplicityMore : Multiplicity
+{
+    int k7;
+    MultiplicityMore( void );
+    void ConsiderNumberMore ( int number );
+};
+
+MultiplicityMore::MultiplicityMore( void ):
+Multiplicity(), k7(0) {}
+
+void MultiplicityMore::ConsiderNumberMore ( int number )
+{
+    Multiplicity::ConsiderNumber( number );
+    if (number % 7 == 0)
+        k7++;
+    
+}
+
+int main( void )
+{
+    MultiplicityMore number;
+    
+    for (int i = 1; i <= 100; i++)
+        number.ConsiderNumberMore(i);
+    
+    cout << "k % 2 - " << number.k2 << endl;
+    cout << "k % 3 - " << number.k3 << endl;
+    cout << "k % 5 - " << number.k5 << endl;
+    cout << "k % 7 - " << number.k7 << endl;
+    return 0;
+}

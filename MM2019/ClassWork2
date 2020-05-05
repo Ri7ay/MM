@@ -1,0 +1,48 @@
+#include "stdafx.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+using namespace System;
+using namespace std;
+
+class Overwriting {};
+class FileNotFound {};
+
+int  FileError( char *FNF, char *OW)
+{
+	char buff[50];
+	ifstream fin(OW);
+	if (!fin.is_open()) throw Overwriting();
+	fin.close();
+	fin.open(FNF);
+	if (!fin.is_open()) throw FileNotFound();
+	ofstream fout(OW);
+	fin >> buff;
+	fout << buff;
+	fin.close();
+	fout.close();
+	return 0;
+}
+
+int main()
+{
+	setlocale(LC_ALL, "rus");
+	char FNF[50], OW[50];
+	cin >> FNF >> OW;
+	while (true)
+		try { FileError(FNF, OW); break; }
+		catch (FileNotFound)
+		{
+			cerr << "FileNotFound" << endl;
+			cin >> FNF;
+		}
+		catch (Overwriting)
+		{
+			cerr << "Overwriting." << endl;
+			cin >> OW;
+		}
+	cout << "SUCCESS!!!"<< endl;
+	return EXIT_SUCCESS;
+	system("pause");
+	return 0;
+}

@@ -1,0 +1,59 @@
+#include "stdafx.h"
+#include <iostream>
+
+using namespace System;
+using namespace std;
+
+class OutOfMemory {};
+class OutOfRange {};
+
+struct Vector
+{
+	Vector(long int quan)
+	{
+		this->mas = new double[quan];
+		this->quan = quan;
+	}
+	double& operator[](int i)
+	{
+		if (i >= quan) throw OutOfRange{};
+		return mas[i];
+	}
+	~Vector()
+	{
+		delete mas;
+	}
+	double *mas;
+	int quan;
+}; 
+
+int main()
+{
+	int quan, i;
+	cout << "Quan and index" << endl;
+	cin >> quan;
+	cin >> i;
+	while (true)
+	{
+		try { Vector vectr(quan); vectr[i]; break; }
+		catch (bad_alloc)
+		{
+			cerr << "OutOfMemory." << endl;
+			cin >> quan;
+
+		}
+		catch (OutOfRange)
+		{
+			cerr << "OutOfRange" << endl;
+			cin >> i;
+		}
+
+	}
+	Vector vectr(quan);
+	for (int j = 0; j < quan; j++)
+	{
+		vectr.mas[j] = j + 1;
+	}
+	cout << vectr[i] << endl;
+    return 0;
+}

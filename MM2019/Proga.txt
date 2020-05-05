@@ -1,0 +1,72 @@
+#include "pch.h"
+#include <string>
+#include <iostream>
+using namespace std;
+
+
+struct Car 
+{
+	double x, y, dir;
+	Car(double xx, double yy, double d);
+	void move(double len);
+	void setDir(double nd);
+};
+
+Car::Car(double xx, double yy, double d) :
+	x(xx), y(yy), dir(d) {}
+
+void Car::move(double len)
+{
+	x += len * cos(dir);
+	y += len * sin(dir);
+}
+
+void Car::setDir(double nd)
+{
+	dir = nd;
+}
+struct Bus : Car
+{
+	int people;
+	double money;
+	Bus(double xx, double yy, double d);
+	void move(double len);
+	void enter(int n);
+	void exit(int n);
+};
+
+Bus::Bus(double xx, double yy, double d) :
+	Car(xx, yy, d), people(0), money(0) {}
+
+void Bus::move(double len)
+{
+	Car::move(len);
+	money += people * len;
+}
+
+void Bus::enter(int n)
+{
+	if (n >= 0) people += n;
+}
+void Bus::exit(int n)
+{
+	if (n >= 0)
+		if (n >= people)
+			people = 0;
+		else
+			people -= n;
+}
+
+int main()
+{
+	Car a(432.342, 324.3242, 65.54);
+	Bus b(564.3, 8798.76, 33.554);
+
+	b.enter(100);
+	b.exit(47);
+	a.move(40);
+	b.move(80);
+	cout << "x-" << a.x << "y-" << a.y << "dir-" << a.dir << endl;
+	cout << "x-" << b.x << "y-" << b.y << "dir-" << b.dir << "money-" << b.money << "people-" << b.people << endl;
+	return 0;
+}

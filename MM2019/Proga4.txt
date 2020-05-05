@@ -1,0 +1,98 @@
+
+#include <iostream>
+#include "math.h"
+using namespace std;
+
+struct Calculator
+{
+    double x;
+    Calculator( double xx);
+    double add( double y);
+    double sub( double y);
+    double mul( double y);
+    double div( double y);
+    double sqr( void );
+    double trig( void );
+};
+
+Calculator::Calculator( double xx):
+x(xx) {}
+
+double Calculator::add( double y )
+{
+    x += y;
+    return x;
+}
+
+double Calculator::sub( double y )
+{
+    x -= y;
+    return x;
+}
+
+double Calculator::mul( double y )
+{
+    x *= y;
+    return x;
+}
+
+double Calculator::div( double y )
+{
+    x = x / y;
+    return x;
+}
+
+double Calculator::sqr( void )
+{
+    x = sqrt(x);
+    return x;
+}
+
+double Calculator::trig( void  )
+{
+    x = cos(x);
+    return x;
+}
+
+struct  Memory : Calculator
+{
+    double* mas = new double[1];
+    int i = 1;
+    Memory( double xx );
+    void addmemory( double y );
+    void delmemory( void );
+    void add_x( void );
+};
+
+Memory::Memory( double xx):
+Calculator(xx) {}
+
+void Memory::addmemory( double y )
+{
+    mas[0] = y;
+}
+
+void Memory::delmemory( void )
+{
+    cout << mas[0] << endl;
+    delete [] mas;
+    double* mas = new double[1];
+}
+
+void Memory::add_x( void )
+{
+    mas[0] += x;
+}
+
+int main ( void )
+{
+    Memory calc(16.16);
+    
+    cout << calc.add(100023.84) << calc.sub(3432.34) << calc.mul(3.56) << calc.div(2) << endl;
+    cout << calc.sqr() << calc.trig() << endl;
+    calc.addmemory(433.43);
+    calc.delmemory();
+    calc.addmemory(43.43);
+    calc.add_x();
+    calc.delmemory();
+}

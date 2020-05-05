@@ -1,0 +1,55 @@
+#include <iostream>
+#include "math.h"
+using namespace std;
+
+struct Numbers
+{
+    double a, b;
+    Numbers( double num1, double num2);
+    double Consider( double x );
+};
+
+Numbers::Numbers( double num1, double num2)
+{
+    if (num1 >= num2)
+        static_cast<void>(a = num1), b = num2;
+    else
+        static_cast<void>(b = num1), a = num2;
+}
+
+double Numbers::Consider( double x)
+{
+    double mas[3];
+    double tmp;
+    mas[0] = a, mas[1] = b, mas[2] = x;
+    for (int i = 0; i < 3; i++)
+        for(int j = 0; j < 2; j++)
+        {
+            if( mas[j] > mas[j + 1])
+            {
+                tmp = mas[j + 1];
+                mas[j + 1] = mas[j];
+                mas[j] = tmp;
+            }
+        }
+    a = mas[2], b = mas[1];
+    return mas[0];
+    //return 0;
+}
+
+struct AllNumber : Numbers
+{
+    double c;
+    AllNumber( double num1, double num2, double num3 );
+};
+
+AllNumber::AllNumber( double num1, double num2, double num3 ):
+Numbers( num1, num2), c(Numbers::Consider( num3 )) {}
+
+int main( void )
+{
+    double tmp;
+    AllNumber num(343.43, 6522.32, 543.34);
+    cout << num.a << " " << num.b << " " << num.c;
+    return 0;
+}

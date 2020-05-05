@@ -1,0 +1,276 @@
+#include <iostream>
+#include <string>
+//#include <fstream>
+//#include <cstddef> // size_t
+//#include <cstring> // strlen, strcpy
+using namespace std;
+
+//Интерфейс для классов
+struct Expression
+{
+    virtual ~Expression() {} // Деконструктор
+    virtual Expression * result() = 0; // Результат выражений
+    virtual void print() = 0; // Вывод на экран
+    virtual Expression *clone() = 0; // Метод копирующий выражение
+};
+
+//Возвращает строчку
+struct Atom : Expression
+{
+    Atom(string str) : str(str){}
+    void print()
+    {
+        cout<<"\"" << str <<"\""; //Печатаю выражение
+    }
+    
+    Expression *clone()
+    {
+        return this; // Копирую выражение
+    }
+
+    Expression * result()
+    {
+        return clone(); // Возвращаю значение
+    }
+    string str;
+};
+
+//Возвращает 2 результата
+struct Cons : Expression
+{
+    
+    Cons(Expression *expr_f, Expression *expr_s) :
+    expr_f(expr_f), expr_s(expr_s) {}
+    
+    Expression *clone()
+    {
+        return this; // Копирую вражение
+    }
+
+    Expression * result()
+    {
+        return clone();  // Возврщаю заничение
+    }
+
+    void print()
+    {
+        cout<<"Cons(";
+        expr_f->print(); // Вывожу результат 1 сылки
+        cout<<", ";
+        expr_s->print(); // Вывожу результат 2 сылки
+        cout<<")";
+    }
+
+    ~Cons ()
+    {
+        delete expr_f; // Осовобождаю память у 1 сылки
+        delete expr_s; // Осовобождаю память у 2 сылки
+    }
+    
+    Expression *expr_f;
+    Expression *expr_s;
+};
+
+//Возвращает 1 выражение и проверяет не указывает ли что то на Atom
+struct Car : Expression
+{
+    Car(Expression *expr_f, Expression *expr_s) :
+    expr_f(expr_f), expr_s(expr_s) {}
+    
+    Expression *clone()
+    {
+        return this;
+    }
+    
+    bool check_equals(Expression *left, Expression *right) // Проверка типов укзазателей
+    {
+        int* left_check = (int*)left;
+        int* right_check = (int*)right;
+        if (*left_check == *right_check && *left_check != *((int *)new Atom("1")))
+            return true;
+        else
+            return false;
+    }
+    
+    Expression * result()
+    {
+        if (check_equals(expr_f, expr_s)) // Проверка указателей
+            return expr_f->result(); // Возвращаю резульат 1 значения
+        else
+            return new Atom("Ошибка");
+    }
+    
+    void print()
+    {
+        cout<<"Car(";
+        expr_f->print();
+        cout<<", ";
+        expr_s->print();
+        cout<<")";
+    }
+    
+    ~Car ()
+    {
+        delete expr_f; // Осовобождаю память у 1 сылки
+        delete expr_s; // Осовобождаю память у 2 сылки
+    }
+    
+    Expression *expr_f;
+    Expression *expr_s;
+};
+
+//Возвращает 2 выражение и проверяет не указывает ли что то на Atom
+struct Cdr : Expression
+{
+    Cdr(Expression *expr_f, Expression *expr_s) :
+    expr_f(expr_f), expr_s(expr_s) {}
+    
+    Expression *clone()
+    {
+        return this;
+    }
+    
+    bool check_equals(Expression *left, Expression *right) // Проверка типов укзазателей
+    {
+        int* left_check = (int*)left;
+        int* right_check = (int*)right;
+        if (*left_check == *right_check && *left_check != *((int *)new Atom("1")))
+            return true;
+        else
+            return false;
+    }
+    
+    Expression * result()
+    {
+        if (check_equals(expr_f, expr_s)) // Проверка указателей
+            return expr_s->result(); // Возвращаю резульат 2 значения
+        else
+            return new Atom("Ошибка");
+    }
+    
+    void print()
+    {
+        cout<<"Cdr(";
+        expr_f->print();
+        cout<<", ";
+        expr_s->print();
+        cout<<")";
+    }
+    
+    ~Cdr ()
+    {
+        delete expr_f; // Осовобождаю память у 1 сылки
+        delete expr_s; // Осовобождаю память у 2 сылки
+    }
+    
+    Expression *expr_f;
+    Expression *expr_s;
+};
+
+//Является ли объект Atom ?
+struct TestAtom : Expression
+ {
+     TestAtom(Expression *at) : at(at) {}
+     
+     Expression *clone()
+     {
+         return this; // Копирую вражение
+     }
+     
+     bool is_atom(Expression * at) // Указатель на Expression
+     {
+         Atom *atom = new Atom("1"); // Создание объекта класса Atom
+         int* left_check = (int*)atom;
+         int* right_check = (int*)at;
+         if (*left_check == *right_check) // Проверка Atom ли это ?
+             return true;
+         else
+             return false;
+     }
+     
+     Expression * result()
+     {
+         return new Atom(is_atom(at->result()) ? "true" : "false"); // Результат проверка
+     }
+     
+     void print() // Печатаем результат
+     {
+         cout<<"TestAtom(";
+         at->print();
+         cout<<")";
+     }
+     
+     ~TestAtom ()
+     {
+         delete at; // Осовобождаю память у сылки
+     }
+     
+     Expression *at;
+};
+
+//Класс проверяющий показывают ли выражения на 1 и тот же класс или нет
+struct TestEqual : Expression
+{
+    // Здесь нужна двойная диспетчеризация
+    TestEqual(Expression *expr_f, Expression *expr_s) :
+    expr_f(expr_f), expr_s(expr_s) {}
+    
+    Expression *clone()
+    {
+        return this; // Копирую вражение
+    }
+    
+    bool equal(Expression *left, Expression *right) // Указатель на Expression
+    {
+        int* left_check = (int*)left;
+        int* right_check = (int*)right;
+        if (*left_check == *right_check)
+            return true;
+        else
+            return false;
+    }
+    
+    Expression * result()
+    {
+        return new Atom(equal(expr_f, expr_s) ? "true" : "false"); // Результат проверка
+    }
+    
+    void print()
+    {
+        cout<<"TestAtom(";
+        expr_f->print();
+        cout <<", ";
+        expr_s->print();
+        cout<<")";
+    }
+    
+    ~TestEqual ()
+    {
+        delete expr_f; // Осовобождаю память у 1 сылки
+        delete expr_s; // Осовобождаю память у 2 сылки
+    }
+    
+    Expression *expr_f;
+    Expression *expr_s;
+};
+
+
+
+int main()
+{
+    Expression *expr_f = new Atom("123");
+    Expression *expr_s = new Atom("987");
+    //Expression *cons_all = new Cons(expr_f, expr_s);
+    Expression *res_f = new Cons(expr_f, expr_s);
+    Expression *res_s = new Cons(expr_s, expr_f);
+    Expression *my_check = new Cdr(res_f, res_s);
+    Expression *my_expr = my_check->result();
+    
+    my_expr->print();
+    //cout << endl;
+    //hack_check->print();
+    //cout << endl;
+    //res->print();
+    return 0;
+}
+
